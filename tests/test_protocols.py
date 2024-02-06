@@ -1,6 +1,6 @@
 import unittest
 
-from serialisers.serialisers import deserialize_resp, serialize_resp
+from serialisers import deserialize_resp, serialize_resp
 
 class TestRESPSerialization(unittest.TestCase):
     def test_bulk_string_null(self):
