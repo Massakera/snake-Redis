@@ -1,4 +1,5 @@
 import socket
+import threading
 from src.resp import serialize_resp, deserialize_resp
 from src.commands import handle_ping, handle_set, handle_get, handle_echo, handle_default
 
@@ -31,6 +32,10 @@ def handle_client(client_socket, data_store):
         client_socket.send(serialize_resp(response))
 
 
+def start_client_thread(client_socket):
+    client_thread = threading.Thread(target=handle_client, args=(client_socket, data_store))
+    client_thread.start()
+
 def redis_lite_server():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -42,9 +47,8 @@ def redis_lite_server():
     try:
         while True:
             client_socket, client_address = server_socket.accept()
-            with client_socket:
-                print(f"Accepted connection from {client_address}")
-                handle_client(client_socket, data_store)
+            print(f"Accepted connection from {client_address}")
+            start_client_thread(client_socket)
     except KeyboardInterrupt:
         print("Shutting down server...")
     finally:

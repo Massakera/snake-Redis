@@ -8,6 +8,7 @@ A lightweight Redis-like server implementation in Python, supporting a subset of
 - TCP/IP network communication using sockets
 - Command handling for PING and ECHO
 - SET and GET data commands
+- Handle multiple concurrent clients using threads
 - (More in progress...)
 
 ## Getting Started
