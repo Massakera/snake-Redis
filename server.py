@@ -1,5 +1,6 @@
 import socket
-from src import serialize_resp, deserialize_resp, handle_ping, handle_set, handle_get, handle_echo, handle_default
+from src.resp import serialize_resp, deserialize_resp
+from src.commands import handle_ping, handle_set, handle_get, handle_echo, handle_default
 
 HOST = '127.0.0.1'
 PORT = 6380
