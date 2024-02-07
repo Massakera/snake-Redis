@@ -1,34 +1,42 @@
 import unittest
+from src import serialize_resp, deserialize_resp
 
-from serialisers import deserialize_resp, serialize_resp
+class TestRESPProtocol(unittest.TestCase):
 
-class TestRESPSerialization(unittest.TestCase):
-    def test_bulk_string_null(self):
-        self.assertEqual(serialize_resp(None), "$-1\r\n")
+    def test_deserialize_simple_string(self):
+        self.assertEqual(deserialize_resp(b"+OK\r\n")[0], "OK")
 
-    def test_simple_string(self):
-        self.assertEqual(serialize_resp("+OK"), "+OK\r\n")
+    def test_deserialize_errors(self):
+        self.assertEqual(deserialize_resp(b"-Error message\r\n")[0], "Error message")
 
-    def test_error(self):
-        self.assertEqual(serialize_resp("-Error message"), "-Error message\r\n")
+    def test_deserialize_integers(self):
+        self.assertEqual(deserialize_resp(b":1000\r\n")[0], 1000)
 
-    def test_integer(self):
-        self.assertEqual(serialize_resp(123), ":123\r\n")
+    def test_deserialize_bulk_strings(self):
+        self.assertEqual(deserialize_resp(b"$6\r\nfoobar\r\n")[0], "foobar")
+        self.assertEqual(deserialize_resp(b"$0\r\n\r\n")[0], "")
+        self.assertEqual(deserialize_resp(b"$-1\r\n")[0], None)
 
-    def test_bulk_string_empty(self):
-        self.assertEqual(serialize_resp(""), "$0\r\n\r\n")
+    def test_deserialize_arrays(self):
+        self.assertEqual(deserialize_resp(b"*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n")[0], ["foo", "bar"])
 
-    def test_bulk_string_hello_world(self):
-        self.assertEqual(serialize_resp("hello world"), "$11\r\nhello world\r\n")
+    def test_serialize_simple_string(self):
+        self.assertEqual(serialize_resp("OK"), b"+OK\r\n")
 
-    def test_array_of_bulk_strings(self):
-        self.assertEqual(serialize_resp(["ping"]), "*1\r\n$4\r\nping\r\n")
+    def test_serialize_errors(self):
+        self.assertEqual(serialize_resp("Error message"), b"+Error message\r\n")
 
-    def test_array_with_multiple_bulk_strings(self):
-        self.assertEqual(serialize_resp(["echo", "hello world"]), "*2\r\n$4\r\necho\r\n$11\r\nhello world\r\n")
+    def test_serialize_integers(self):
+        self.assertEqual(serialize_resp(1000), b":1000\r\n")
 
-    def test_deserialize_bulk_string_null(self):
-        self.assertIsNone(deserialize_resp("$-1\r\n"))
+    def test_serialize_bulk_strings(self):
+        self.assertEqual(serialize_resp("foobar"), b"+foobar\r\n")
+        self.assertEqual(serialize_resp(""), b"$0\r\n\r\n")
+        self.assertEqual(serialize_resp(None), b"$-1\r\n")
 
-if __name__ == "__main__":
+    def test_serialize_arrays(self):
+        self.assertEqual(serialize_resp(["foo", "bar"]), b"*2\r\n+foo\r\n+bar\r\n")
+
+
+if __name__ == '__main__':
     unittest.main()
