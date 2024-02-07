@@ -7,6 +7,7 @@ A lightweight Redis-like server implementation in Python, supporting a subset of
 - Basic RESP Serialization/Deserialization
 - TCP/IP network communication using sockets
 - Command handling for PING and ECHO
+- SET and GET data commands
 - (More in progress...)
 
 ## Getting Started

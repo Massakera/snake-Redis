@@ -1,33 +1,38 @@
 import socket
-from src import serialize_resp, deserialize_resp
+from src import serialize_resp, deserialize_resp, handle_ping, handle_set, handle_get, handle_echo, handle_default
 
-# Constants
-HOST = '127.0.0.1'  
-PORT = 6380         
+HOST = '127.0.0.1'
+PORT = 6380
 
-def handle_client(client_socket):
+data_store = {}
+
+def handle_client(client_socket, data_store):
+    command_handlers = {
+        'ping': handle_ping,
+        'set': lambda message: handle_set(message, data_store),
+        'get': lambda message: handle_get(message, data_store),
+        'echo': handle_echo,
+    }
+
     while True:
         resp_message = client_socket.recv(4096)
         if not resp_message:
-            break  # no more data from client
-        
+            break
+
         message, _ = deserialize_resp(resp_message)
         if not isinstance(message, list):
-            continue  
-        
-        command = message[0].lower()
-        if command == 'ping':
-            response = 'PONG'
-        elif command == 'echo' and len(message) > 1:
-            response = message[1]
+            response = "ERROR: Command must be an array with at least 2 elements"
         else:
-            response = f"ERROR: Unrecognized command '{command}'"
-        
-        # send the serialized response
+            command = message[0].lower()
+            handler = command_handlers.get(command, handle_default)
+            response = handler(message)
+
         client_socket.send(serialize_resp(response))
+
 
 def redis_lite_server():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind((HOST, PORT))
     server_socket.listen()
 
@@ -36,9 +41,9 @@ def redis_lite_server():
     try:
         while True:
             client_socket, client_address = server_socket.accept()
-            print(f"Accepted connection from {client_address}")
-            handle_client(client_socket)
-            client_socket.close()
+            with client_socket:
+                print(f"Accepted connection from {client_address}")
+                handle_client(client_socket, data_store)
     except KeyboardInterrupt:
         print("Shutting down server...")
     finally:
